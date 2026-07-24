@@ -1,0 +1,670 @@
+<div id="app"></div>
+<style>
+  :root{
+    --navy:#1A252F;
+    --navy-soft:#2E3D4F;
+    --paper:#FBFAF7;
+    --card:#FFFFFF;
+    --line:#B9BCC2;
+    --line-soft:#E3E1DB;
+    --accent:#3C7A6E;
+    --accent-soft:#E7F1EE;
+    --target:#FFE55C;
+    --shortage:#C1443A;
+    --surplus:#3C7A6E;
+    --text:#1F2429;
+    --text-soft:#5B6470;
+    font-family:"Meiryo","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+  }
+  *{box-sizing:border-box;}
+  #app{
+    background:var(--paper);
+    color:var(--text);
+    min-height:100vh;
+    padding:0 0 60px 0;
+  }
+  .topbar{
+    background:var(--navy);
+    color:#fff;
+    padding:14px 20px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+    position:sticky;
+    top:0;
+    z-index:20;
+  }
+  .topbar h1{
+    font-size:16pt;
+    margin:0;
+    font-weight:700;
+    letter-spacing:.02em;
+  }
+  .topbar .sub{
+    font-size:9pt;
+    color:#C7CDD3;
+    font-weight:400;
+    margin-top:2px;
+  }
+  .nav-actions{display:flex; gap:8px; flex-wrap:wrap;}
+  button{
+    font-family:inherit;
+    cursor:pointer;
+    border:none;
+    border-radius:6px;
+    padding:9px 16px;
+    font-size:10pt;
+    font-weight:600;
+    transition:opacity .15s, transform .1s;
+  }
+  button:active{transform:scale(0.97);}
+  .btn-primary{background:var(--accent); color:#fff;}
+  .btn-ghost{background:rgba(255,255,255,0.12); color:#fff;}
+  .btn-outline{background:#fff; color:var(--navy); border:1px solid var(--line);}
+  .btn-danger{background:#fff; color:var(--shortage); border:1px solid var(--shortage);}
+  button:hover{opacity:.88;}
+  .btn-outline:hover, .btn-danger:hover{opacity:1; background:#F3F3F1;}
+
+  .container{max-width:980px; margin:0 auto; padding:22px 20px;}
+
+  /* ---------- History list ---------- */
+  .list-toolbar{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;}
+  .list-toolbar h2{font-size:13pt; margin:0; color:var(--navy);}
+  .empty-state{
+    background:var(--card); border:1px dashed var(--line); border-radius:10px;
+    padding:40px 20px; text-align:center; color:var(--text-soft); font-size:10.5pt;
+  }
+  .history-card{
+    background:var(--card);
+    border:1px solid var(--line-soft);
+    border-radius:10px;
+    padding:14px 16px;
+    margin-bottom:10px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    cursor:pointer;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  .history-card:hover{border-color:var(--accent); box-shadow:0 2px 10px rgba(0,0,0,.06);}
+  .hc-date{font-weight:700; font-size:11.5pt; color:var(--navy); min-width:150px;}
+  .hc-date .dow{font-size:9pt; color:var(--text-soft); font-weight:400; margin-left:6px;}
+  .hc-metrics{display:flex; gap:18px; font-size:9.5pt; color:var(--text-soft); flex:1; flex-wrap:wrap;}
+  .hc-metrics b{color:var(--text); font-size:10.5pt;}
+  .hc-badge{
+    font-size:8.5pt; padding:3px 9px; border-radius:20px; font-weight:700; white-space:nowrap;
+  }
+  .badge-short{background:#FBE9E7; color:var(--shortage);}
+  .badge-ok{background:var(--accent-soft); color:var(--accent);}
+  .hc-updated{font-size:8pt; color:#9AA1A8; white-space:nowrap;}
+
+  /* ---------- Editor ---------- */
+  .editor-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:10px;}
+  .date-picker{display:flex; align-items:center; gap:8px;}
+  .date-picker input[type=date]{
+    font-family:inherit; font-size:11pt; padding:7px 10px; border:1px solid var(--line); border-radius:6px;
+  }
+  .save-indicator{font-size:9pt; color:var(--accent); display:flex; align-items:center; gap:5px; min-height:16px;}
+  .save-indicator.saving{color:#B08900;}
+  .dot{width:6px; height:6px; border-radius:50%; background:currentColor; display:inline-block;}
+
+  .section{
+    background:var(--card);
+    border:1px solid var(--line-soft);
+    border-radius:10px;
+    padding:16px 18px 20px;
+    margin-bottom:16px;
+  }
+  .section h3{
+    font-size:12pt;
+    color:var(--navy);
+    margin:0 0 12px 0;
+    font-weight:700;
+    padding-bottom:8px;
+    border-bottom:2px solid var(--navy);
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .section h3 .mark{color:var(--accent);}
+  .hint{font-size:8.5pt; color:var(--text-soft); font-weight:400; margin-left:auto;}
+
+  .approval-grid{display:grid; grid-template-columns:repeat(9,1fr); gap:6px;}
+  .approval-cell label{display:block; font-size:8pt; color:var(--text-soft); margin-bottom:3px; text-align:center;}
+  .approval-cell input{width:100%; text-align:center; padding:6px 2px; border:1px solid var(--line); border-radius:5px; font-size:9.5pt; font-family:inherit;}
+
+  table.grid{width:100%; border-collapse:collapse; font-size:9.5pt;}
+  table.grid th, table.grid td{border:1px solid var(--line); padding:6px 5px; text-align:center;}
+  table.grid th{background:#F0EFEA; color:var(--navy-soft); font-weight:700; font-size:8.7pt;}
+  table.grid td input, table.grid td textarea{
+    width:100%; border:none; text-align:center; font-family:inherit; font-size:9.5pt; background:transparent; padding:2px;
+  }
+  table.grid td input:focus, table.grid td textarea:focus{background:#FFFDE8; outline:1px solid var(--accent); border-radius:3px;}
+  table.grid td.name{font-weight:700; color:var(--navy); background:#F7F7F5;}
+  table.grid tr.total-row td{background:#EEF3F2; font-weight:700;}
+  table.grid tr.target-row td{background:var(--target); font-weight:700;}
+  table.grid tr.target-row td.name{background:var(--target);}
+  table.grid td.readonly{background:#F5F5F3; color:var(--text-soft);}
+  table.grid td textarea{resize:vertical; min-height:28px;}
+  .shortage-val{color:var(--shortage); font-weight:700;}
+  .surplus-val{color:var(--surplus); font-weight:700;}
+
+  .am-pm-table td.work{text-align:left;}
+  .am-pm-table td.work textarea{text-align:left; min-height:38px;}
+
+  textarea.wide{width:100%; min-height:110px; border:1px solid var(--line); border-radius:6px; padding:10px; font-family:inherit; font-size:10pt; resize:vertical;}
+  textarea.wide:focus{outline:1px solid var(--accent);}
+  textarea.short{min-height:56px;}
+  .held-note{
+    background:#FBF6E9; border:1px solid #E9DDB0; color:#8A6D1D; font-size:9pt;
+    padding:8px 12px; border-radius:6px; margin-bottom:8px;
+  }
+
+  .counts-row{display:flex; gap:24px; flex-wrap:wrap;}
+  .count-field{display:flex; align-items:center; gap:8px; font-size:10pt;}
+  .count-field input{width:70px; padding:6px 8px; border:1px solid var(--line); border-radius:5px; font-family:inherit; text-align:center;}
+
+  .footer-actions{display:flex; justify-content:space-between; margin-top:6px;}
+
+  /* ---------- Print ---------- */
+  #printArea{display:none;}
+  @media print{
+    @page{ size:A4 portrait; margin:15mm 13mm; }
+    body *{visibility:hidden;}
+    #printArea, #printArea *{visibility:visible;}
+    #printArea{
+      display:block; position:absolute; top:0; left:0; width:100%;
+      font-family:"Meiryo","Hiragino Kaku Gothic ProN",sans-serif;
+    }
+    .p-page{page-break-after:always; padding:0;}
+    .p-page:last-child{page-break-after:auto;}
+    .p-title{font-size:15pt; font-weight:700; margin:0 0 10px 0; color:#000;}
+    .p-headrow{display:flex; gap:12px; align-items:flex-start; margin-bottom:10px;}
+    .p-date{font-size:16pt; font-weight:700; white-space:nowrap;}
+    table.p-grid{width:100%; border-collapse:collapse; font-size:8.3pt; margin-bottom:12px;}
+    table.p-grid th, table.p-grid td{border:1px solid #333; padding:4px 3px; text-align:center;}
+    table.p-grid th{background:#EFEFEF; font-weight:700;}
+    table.p-grid td.name{font-weight:700; text-align:center;}
+    table.p-grid tr.total-row td{background:#EAEAEA; font-weight:700;}
+    table.p-grid tr.target-row td{background:#FFE55C; font-weight:700;}
+    .p-h3{font-size:12pt; font-weight:700; border-bottom:2px solid #000; padding-bottom:4px; margin:14px 0 8px 0;}
+    .p-box{border:1px solid #333; padding:8px; min-height:26px; font-size:9.5pt; white-space:pre-wrap; margin-bottom:10px;}
+    .p-box.tall{min-height:210px;}
+    .p-counts{display:flex; gap:30px; font-size:9.5pt; margin-bottom:8px;}
+    .p-am-pm td{text-align:left; vertical-align:top; font-size:8.5pt; padding:5px;}
+  }
+
+  @media (max-width:720px){
+    .approval-grid{grid-template-columns:repeat(3,1fr);}
+    table.grid{font-size:8.3pt;}
+    .topbar{flex-direction:column; align-items:flex-start;}
+  }
+</style>
+<script>
+(function(){
+  // ▼▼ ここにGASデプロイ後の「ウェブアプリのURL」を貼り付けてください ▼▼
+  const CONFIG = {
+    GAS_URL: "https://script.google.com/macros/s/AKfycbw7_bvrPqWh3Dw4JS5cvsTycEyZpkL9fVTSeiiD53_bpEMhzJkDI2j6lz6jMsZWem3h/exec"
+  };
+  // ▲▲ ここまで ▲▲
+
+  const STAFF_RECORD = ["川上次長","南波","奥田","寺田","福嶋","勝西","辻"];
+  const STAFF_ATTEND = ["川上次長","安井","南波","奥田","寺田","福嶋","勝西","辻"];
+  const APPROVERS = ["施設長","管理部長","次長","副看護部長","看護師長","リハビリ統括科長","介護士長","総務課長","作成者"];
+  const MONTH_TARGET = {4:159,5:171,6:183,7:194,8:206,9:217,10:226,11:234,12:242,1:249,2:257,3:264};
+  const DOW = ["日","月","火","水","木","金","土"];
+
+  let state = { view:"list", date:null, record:null, saveTimer:null, saving:false };
+
+  function todayStr(){
+    const d = new Date();
+    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  }
+  function fmtDateJP(dateStr){
+    const [y,m,d] = dateStr.split("-").map(Number);
+    const dow = DOW[new Date(y,m-1,d).getDay()];
+    return {main:`${y}年${m}月${d}日`, dow:`（${dow}）`};
+  }
+  function blankRecord(dateStr, carryFrom){
+    const staffRecords = {};
+    STAFF_RECORD.forEach(n=>{
+      const prevTotal = carryFrom && carryFrom.staffRecords && carryFrom.staffRecords[n]
+        ? Number(carryFrom.staffRecords[n].total)||0 : 0;
+      staffRecords[n] = {total:prevTotal, visits:0, planUpdate:0, certSurvey:0, newPlan:0, newDaily:0, newMonthly:0, endDaily:0, tasks:""};
+    });
+    const attendance = {};
+    STAFF_ATTEND.forEach(n=> attendance[n] = "");
+    const approvals = {};
+    APPROVERS.forEach(n=> approvals[n] = "");
+    const workContent = {};
+    STAFF_RECORD.forEach(n=> workContent[n] = {am:"", pm:""});
+    return {
+      date:dateStr, approvals, attendance, staffRecords, workContent,
+      shareItems:"", complaints:{complaint:0, accident:0, nearMiss:0},
+      newConsult:"なし", overlap:"", salesPlan:"", visitors:"",
+      createdAt:new Date().toISOString(), updatedAt:new Date().toISOString()
+    };
+  }
+
+  function gasReady(){ return !!CONFIG.GAS_URL; }
+
+  async function loadAllDates(){
+    if(!gasReady()) return [];
+    try{
+      const res = await fetch(CONFIG.GAS_URL + "?action=list");
+      const data = await res.json();
+      return (data.dates||[]).slice().sort().reverse();
+    }catch(e){ console.error(e); return []; }
+  }
+  async function loadRecord(dateStr){
+    if(!gasReady()) return null;
+    try{
+      const res = await fetch(CONFIG.GAS_URL + "?action=get&date=" + encodeURIComponent(dateStr));
+      const data = await res.json();
+      return data.record || null;
+    }catch(e){ console.error(e); return null; }
+  }
+  async function saveRecord(rec){
+    if(!gasReady()) return;
+    rec.updatedAt = new Date().toISOString();
+    try{
+      await fetch(CONFIG.GAS_URL, {
+        method:"POST",
+        headers:{"Content-Type":"text/plain;charset=utf-8"}, // CORSプリフライト回避のためtext/plainで送信
+        body: JSON.stringify({action:"save", date:rec.date, record:rec})
+      });
+    }catch(e){ console.error(e); }
+  }
+  async function findMostRecentBefore(dateStr){
+    const dates = await loadAllDates();
+    const prior = dates.filter(d=>d < dateStr).sort().reverse();
+    if(prior.length===0) return null;
+    return await loadRecord(prior[0]);
+  }
+  async function fetchAttendance(dateStr){
+    if(!gasReady()) return null;
+    try{
+      const res = await fetch(CONFIG.GAS_URL + "?action=attendance&date=" + encodeURIComponent(dateStr));
+      const data = await res.json();
+      return data.attendance || null;
+    }catch(e){ console.error(e); return null; }
+  }
+
+  function monthTarget(dateStr){
+    const m = Number(dateStr.split("-")[1]);
+    return MONTH_TARGET[m] || 0;
+  }
+  function sumTotal(rec){
+    return STAFF_RECORD.reduce((s,n)=> s + (Number(rec.staffRecords[n].total)||0), 0);
+  }
+
+  function el(tag, attrs, children){
+    const e = document.createElement(tag);
+    if(attrs) for(const k in attrs){
+      if(k==="class") e.className = attrs[k];
+      else if(k==="html") e.innerHTML = attrs[k];
+      else e.setAttribute(k, attrs[k]);
+    }
+    (children||[]).forEach(c=> e.appendChild(c));
+    return e;
+  }
+
+  async function render(){
+    const app = document.getElementById("app");
+    app.innerHTML = "";
+    const topbar = el("div", {class:"topbar"});
+    const titleWrap = el("div", {}, [
+      el("h1", {html:"居宅介護支援センター　おおやけの里　業務日誌"}),
+      el("div", {class:"sub", html: state.view==="editor" ? "編集モード ー 入力は自動保存されます" : "日々の記録を一覧・編集できます"})
+    ]);
+    const actions = el("div", {class:"nav-actions"});
+    if(state.view==="editor"){
+      const backBtn = el("button", {class:"btn-ghost"}); backBtn.textContent="← 一覧へ";
+      backBtn.onclick = ()=>{ state.view="list"; render(); };
+      const printBtn = el("button", {class:"btn-outline"}); printBtn.textContent="🖨 印刷（A4両面）";
+      printBtn.onclick = ()=>{ buildPrintArea(state.record); window.print(); };
+      actions.appendChild(backBtn); actions.appendChild(printBtn);
+    } else {
+      const newBtn = el("button", {class:"btn-primary"}); newBtn.textContent="＋ 本日の日誌を作成";
+      newBtn.onclick = ()=>{
+        if(!gasReady()){ alert("先にCONFIG.GAS_URLを設定してください。"); return; }
+        openEditor(todayStr());
+      };
+      actions.appendChild(newBtn);
+    }
+    topbar.appendChild(titleWrap); topbar.appendChild(actions);
+    app.appendChild(topbar);
+
+    const container = el("div", {class:"container"});
+    if(state.view==="list"){
+      container.appendChild(await renderList());
+    } else {
+      container.appendChild(renderEditor());
+    }
+    app.appendChild(container);
+    app.appendChild(el("div", {id:"printArea"}));
+  }
+
+  async function renderList(){
+    const wrap = el("div", {});
+    const toolbar = el("div", {class:"list-toolbar"}, [
+      el("h2", {html:"日誌履歴"}),
+    ]);
+    wrap.appendChild(toolbar);
+    if(!gasReady()){
+      wrap.appendChild(el("div", {class:"held-note", html:"⚠ まだGoogleスプレッドシートと接続されていません。HTMLファイル内の <code>CONFIG.GAS_URL</code> にデプロイ後のウェブアプリURLを貼り付けてから保存し直してください。"}));
+      return wrap;
+    }
+    const dates = await loadAllDates();
+    if(dates.length===0){
+      wrap.appendChild(el("div", {class:"empty-state", html:"まだ日誌がありません。右上の「本日の日誌を作成」から始めてください。"}));
+      return wrap;
+    }
+    for(const d of dates){
+      const rec = await loadRecord(d);
+      if(!rec) continue;
+      const total = sumTotal(rec);
+      const target = monthTarget(d);
+      const diff = target - total;
+      const {main, dow} = fmtDateJP(d);
+      const card = el("div", {class:"history-card"});
+      card.appendChild(el("div", {class:"hc-date", html:`${main}<span class="dow">${dow}</span>`}));
+      const metrics = el("div", {class:"hc-metrics"});
+      metrics.innerHTML = `合計担当件数 <b>${total}</b>件　／　月次目標 <b>${target}</b>件`;
+      card.appendChild(metrics);
+      const badge = el("div", {class:"hc-badge " + (diff>0?"badge-short":"badge-ok")});
+      badge.textContent = diff>0 ? `不足 ${diff}件` : (diff<0 ? `超過 ${-diff}件` : "達成");
+      card.appendChild(badge);
+      card.appendChild(el("div", {class:"hc-updated", html:"更新: "+new Date(rec.updatedAt).toLocaleString("ja-JP",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})}));
+      card.onclick = ()=> openEditor(d);
+      wrap.appendChild(card);
+    }
+    return wrap;
+  }
+
+  async function openEditor(dateStr){
+    let rec = await loadRecord(dateStr);
+    let isNew = false;
+    if(!rec){
+      const carry = await findMostRecentBefore(dateStr);
+      rec = blankRecord(dateStr, carry);
+      isNew = true;
+    }
+    // 出勤状況が未入力の職員は、勤務表(Attendanceシート)から自動で埋める
+    const attend = await fetchAttendance(dateStr);
+    if(attend){
+      let filled = false;
+      STAFF_ATTEND.forEach(n=>{
+        if((!rec.attendance[n] || rec.attendance[n]==="") && attend[n]){
+          rec.attendance[n] = attend[n];
+          filled = true;
+        }
+      });
+      if(filled) isNew = true; // ensure it gets persisted
+    }
+    if(isNew) await saveRecord(rec);
+    state.record = rec;
+    state.date = dateStr;
+    state.view = "editor";
+    render();
+  }
+
+  function scheduleSave(){
+    const indicator = document.getElementById("saveIndicator");
+    if(indicator){ indicator.className="save-indicator saving"; indicator.innerHTML='<span class="dot"></span> 保存中…'; }
+    if(state.saveTimer) clearTimeout(state.saveTimer);
+    state.saveTimer = setTimeout(async ()=>{
+      await saveRecord(state.record);
+      const ind = document.getElementById("saveIndicator");
+      if(ind){ ind.className="save-indicator"; ind.innerHTML='<span class="dot"></span> 保存済み'; }
+      refreshComputed();
+    }, 500);
+  }
+
+  function refreshComputed(){
+    const rec = state.record;
+    const total = sumTotal(rec);
+    const target = monthTarget(rec.date);
+    const diff = target - total;
+    const totalEl = document.getElementById("calcTotal");
+    const targetEl = document.getElementById("calcTarget");
+    const diffEl = document.getElementById("calcDiff");
+    if(totalEl) totalEl.textContent = total;
+    if(targetEl) targetEl.textContent = target;
+    if(diffEl){
+      diffEl.textContent = diff>0 ? `不足 ${diff}件` : (diff<0 ? `超過 ${-diff}件` : "達成");
+      diffEl.className = diff>0 ? "shortage-val" : (diff<0 ? "surplus-val" : "");
+    }
+  }
+
+  function renderEditor(){
+    const rec = state.record;
+    const frag = el("div", {});
+
+    // date + save indicator
+    const head = el("div", {class:"editor-head"});
+    const dp = el("div", {class:"date-picker"});
+    const dateInput = el("input", {type:"date", value:rec.date});
+    dateInput.onchange = ()=> openEditor(dateInput.value);
+    dp.appendChild(el("span", {html:"対象日:"}));
+    dp.appendChild(dateInput);
+    head.appendChild(dp);
+    head.appendChild(el("div", {id:"saveIndicator", class:"save-indicator", html:'<span class="dot"></span> 保存済み'}));
+    frag.appendChild(head);
+
+    // Section: header approvals
+    const secApproval = el("div", {class:"section"});
+    secApproval.appendChild(el("h3", {html:'<span class="mark">■</span> 確認欄'}));
+    const agrid = el("div", {class:"approval-grid"});
+    APPROVERS.forEach(name=>{
+      const cell = el("div", {class:"approval-cell"});
+      cell.appendChild(el("label", {html:name}));
+      const inp = el("input", {type:"text", value:rec.approvals[name]||""});
+      inp.oninput = (e)=>{ rec.approvals[name]=e.target.value; scheduleSave(); };
+      cell.appendChild(inp);
+      agrid.appendChild(cell);
+    });
+    secApproval.appendChild(agrid);
+    frag.appendChild(secApproval);
+
+    // Section: attendance
+    const secAttend = el("div", {class:"section"});
+    secAttend.appendChild(el("h3", {html:'<span class="mark">■</span> 出勤状況'}));
+    const atable = el("table", {class:"grid"});
+    const athead = el("tr", {}, STAFF_ATTEND.map(n=> el("th", {html:n})));
+    atable.appendChild(athead);
+    const abody = el("tr", {}, STAFF_ATTEND.map(n=>{
+      const td = el("td", {});
+      const inp = el("input", {type:"text", value:rec.attendance[n]||"", placeholder:"○"});
+      inp.oninput = (e)=>{ rec.attendance[n]=e.target.value; scheduleSave(); };
+      td.appendChild(inp);
+      return td;
+    }));
+    atable.appendChild(abody);
+    secAttend.appendChild(atable);
+    frag.appendChild(secAttend);
+
+    // Section: staff performance
+    const secPerf = el("div", {class:"section"});
+    secPerf.appendChild(el("h3", {html:'<span class="mark">■</span> 職員別 当日業務実績管理（訪問件数・プラン件数・認定調査）'}));
+    const ptable = el("table", {class:"grid"});
+    const cols = [
+      ["職員名",null],["現在の担当総件数","total"],["訪問件数","visits"],["ケアプラン更新数","planUpdate"],
+      ["認定調査実施数","certSurvey"],["新規プラン作成","newPlan"],["新規件数(当日分)","newDaily"],
+      ["新規件数(月累計)","newMonthly"],["終了件数(当日分)","endDaily"],["未処理の業務タスク","tasks"]
+    ];
+    ptable.appendChild(el("tr", {}, cols.map(c=> el("th", {html:c[0]}))));
+    STAFF_RECORD.forEach(n=>{
+      const row = el("tr", {});
+      row.appendChild(el("td", {class:"name", html:n}));
+      cols.slice(1).forEach(([label,key])=>{
+        const td = el("td", {});
+        if(key==="tasks"){
+          const ta = el("textarea", {rows:"1"});
+          ta.value = rec.staffRecords[n][key]||"";
+          ta.oninput = (e)=>{ rec.staffRecords[n][key]=e.target.value; scheduleSave(); };
+          td.appendChild(ta);
+        } else {
+          const inp = el("input", {type:"number", value:rec.staffRecords[n][key]});
+          inp.oninput = (e)=>{ rec.staffRecords[n][key]=e.target.value; scheduleSave(); if(key==="total") refreshComputed(); };
+          td.appendChild(inp);
+        }
+        row.appendChild(td);
+      });
+      ptable.appendChild(row);
+    });
+    // total row
+    const totalRow = el("tr", {class:"total-row"});
+    totalRow.appendChild(el("td", {class:"name", html:"合計"}));
+    totalRow.appendChild(el("td", {id:"calcTotal", html:String(sumTotal(rec))}));
+    for(let i=0;i<7;i++) totalRow.appendChild(el("td", {html:""}));
+    ptable.appendChild(totalRow);
+    // target row
+    const targetRow = el("tr", {class:"target-row"});
+    targetRow.appendChild(el("td", {class:"name", html:"月次目標"}));
+    targetRow.appendChild(el("td", {id:"calcTarget", html:String(monthTarget(rec.date))}));
+    const diffTd = el("td", {colspan:"1"});
+    diffTd.setAttribute("colspan","2");
+    const diff = monthTarget(rec.date) - sumTotal(rec);
+    diffTd.appendChild(el("span", {id:"calcDiff", class: diff>0?"shortage-val":(diff<0?"surplus-val":""), html: diff>0?`不足 ${diff}件`:(diff<0?`超過 ${-diff}件`:"達成")}));
+    diffTd.prepend(el("span", {html:"過不足：", style:""}));
+    targetRow.appendChild(diffTd);
+    for(let i=0;i<5;i++) targetRow.appendChild(el("td", {html:""}));
+    ptable.appendChild(targetRow);
+    secPerf.appendChild(ptable);
+    secPerf.appendChild(el("div", {class:"hint", html:"「現在の担当総件数」は前日の記録から自動的に引き継がれます。月次目標・過不足は自動計算です。"}));
+    frag.appendChild(secPerf);
+
+    // Section: work content AM/PM
+    const secWork = el("div", {class:"section"});
+    secWork.appendChild(el("h3", {html:'<span class="mark">■</span> 業務内容（緊急対応などの特記事項など）'}));
+    const wtable = el("table", {class:"grid am-pm-table"});
+    wtable.appendChild(el("tr", {}, [el("th", {html:"担当者"}), el("th", {html:"AM"}), el("th", {html:"PM"})]));
+    STAFF_RECORD.forEach(n=>{
+      const row = el("tr", {});
+      row.appendChild(el("td", {class:"name", html:n}));
+      ["am","pm"].forEach(k=>{
+        const td = el("td", {class:"work"});
+        const ta = el("textarea", {rows:"1"});
+        ta.value = rec.workContent[n][k]||"";
+        ta.oninput = (e)=>{ rec.workContent[n][k]=e.target.value; scheduleSave(); };
+        td.appendChild(ta);
+        row.appendChild(td);
+      });
+      wtable.appendChild(row);
+    });
+    secWork.appendChild(wtable);
+    frag.appendChild(secWork);
+
+    // Section: share items (held off)
+    const secShare = el("div", {class:"section"});
+    secShare.appendChild(el("h3", {html:'<span class="mark">■</span> 共有事項（朝の申し送り内容・利用者状況・連絡事項）'}));
+    secShare.appendChild(el("div", {class:"held-note", html:"※ 自動作成機能は現在保留中です。これまで通り手入力・貼り付けでご記入ください。"}));
+    const shareTa = el("textarea", {class:"wide"});
+    shareTa.value = rec.shareItems || "";
+    shareTa.oninput = (e)=>{ rec.shareItems = e.target.value; scheduleSave(); };
+    secShare.appendChild(shareTa);
+    frag.appendChild(secShare);
+
+    // Section: complaints
+    const secComplaint = el("div", {class:"section"});
+    secComplaint.appendChild(el("h3", {html:'<span class="mark">■</span> 苦情・事故・ヒヤリハット件数報告'}));
+    const crow = el("div", {class:"counts-row"});
+    [["苦情件数","complaint"],["事故件数","accident"],["ヒヤリハット件数","nearMiss"]].forEach(([label,key])=>{
+      const f = el("div", {class:"count-field"});
+      f.appendChild(el("span", {html:label+"："}));
+      const inp = el("input", {type:"number", value:rec.complaints[key]});
+      inp.oninput = (e)=>{ rec.complaints[key]=e.target.value; scheduleSave(); };
+      f.appendChild(inp);
+      crow.appendChild(f);
+    });
+    secComplaint.appendChild(crow);
+    frag.appendChild(secComplaint);
+
+    // Section: new consult / overlap / sales / visitors
+    const freeSections = [
+      ["新規相談受付","newConsult", false],
+      ["おおやけの里内の連携（オーバーラップ）","overlap", true],
+      ["営業予定と活動（訪問・電話・ポスティングなど）　※実施者名も記録","salesPlan", true],
+      ["事業所に訪れた事業所・内容の記録","visitors", true]
+    ];
+    freeSections.forEach(([label,key,short])=>{
+      const sec = el("div", {class:"section"});
+      sec.appendChild(el("h3", {html:'<span class="mark">■</span> '+label}));
+      const ta = el("textarea", {class:"wide" + (short?" short":"")});
+      ta.value = rec[key] || "";
+      ta.oninput = (e)=>{ rec[key]=e.target.value; scheduleSave(); };
+      sec.appendChild(ta);
+      frag.appendChild(sec);
+    });
+
+    return frag;
+  }
+
+  function esc(s){ return (s||"").toString().replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+  function buildPrintArea(rec){
+    const total = sumTotal(rec);
+    const target = monthTarget(rec.date);
+    const diff = target - total;
+    const diffLabel = diff>0 ? `不足 ${diff}件` : (diff<0 ? `超過 ${-diff}件` : "達成");
+    const {main, dow} = fmtDateJP(rec.date);
+
+    let page1 = `<div class="p-page">
+      <div class="p-title">居宅介護支援センター愛生会おおやけの里　業務日誌</div>
+      <div class="p-headrow">
+        <div class="p-date">${main}${dow}</div>
+        <table class="p-grid" style="flex:1">
+          <tr>${APPROVERS.map(a=>`<th>${a}</th>`).join("")}</tr>
+          <tr>${APPROVERS.map(a=>`<td>${esc(rec.approvals[a])}</td>`).join("")}</tr>
+        </table>
+      </div>
+      <table class="p-grid">
+        <tr><th></th>${STAFF_ATTEND.map(n=>`<th>${n}</th>`).join("")}</tr>
+        <tr><td class="name">出勤状況</td>${STAFF_ATTEND.map(n=>`<td>${esc(rec.attendance[n])}</td>`).join("")}</tr>
+      </table>
+      <div class="p-h3">■職員別 当日業務実績管理（訪問件数・プラン件数・認定調査）</div>
+      <table class="p-grid">
+        <tr><th>職員名</th><th>現在の担当総件数</th><th>訪問件数</th><th>ケアプラン更新数</th><th>認定調査実施数</th><th>新規プラン作成</th><th>新規件数(当日分)</th><th>新規件数(月累計)</th><th>終了件数(当日分)</th><th>未処理の業務タスク</th></tr>
+        ${STAFF_RECORD.map(n=>{
+          const s = rec.staffRecords[n];
+          return `<tr><td class="name">${n}</td><td>${s.total||0}</td><td>${s.visits||0}</td><td>${s.planUpdate||0}</td><td>${s.certSurvey||0}</td><td>${s.newPlan||0}</td><td>${s.newDaily||0}</td><td>${s.newMonthly||0}</td><td>${s.endDaily||0}</td><td style="text-align:left">${esc(s.tasks)}</td></tr>`;
+        }).join("")}
+        <tr class="total-row"><td class="name">合計</td><td>${total}</td><td colspan="8"></td></tr>
+        <tr class="target-row"><td class="name">月次目標</td><td>${target}</td><td colspan="2">過不足：${diffLabel}</td><td colspan="6"></td></tr>
+      </table>
+      <div class="p-h3">■業務内容（緊急対応などの特記事項など）</div>
+      <table class="p-grid p-am-pm">
+        <tr><th style="width:60px">担当者</th><th>AM</th><th>PM</th></tr>
+        ${STAFF_RECORD.map(n=>`<tr><td class="name">${n}</td><td class="work">${esc(rec.workContent[n].am)}</td><td class="work">${esc(rec.workContent[n].pm)}</td></tr>`).join("")}
+      </table>
+    </div>`;
+
+    let page2 = `<div class="p-page">
+      <div class="p-h3" style="margin-top:0">■共有事項（朝の申し送り内容・利用者状況・連絡事項）</div>
+      <div class="p-box tall">${esc(rec.shareItems)}</div>
+      <div class="p-h3">■苦情・事故・ヒヤリハット件数報告</div>
+      <div class="p-counts">
+        <div>苦情件数：${rec.complaints.complaint||0}</div>
+        <div>事故件数：${rec.complaints.accident||0}</div>
+        <div>ヒヤリハット件数：${rec.complaints.nearMiss||0}</div>
+      </div>
+      <div class="p-h3">■新規相談受付</div>
+      <div class="p-box">${esc(rec.newConsult)}</div>
+      <div class="p-h3">■おおやけの里内の連携（オーバーラップ）</div>
+      <div class="p-box">${esc(rec.overlap)}</div>
+      <div class="p-h3">■営業予定と活動（訪問・電話・ポスティングなど）　※実施者名も記録</div>
+      <div class="p-box">${esc(rec.salesPlan)}</div>
+      <div class="p-h3">■事業所に訪れた事業所・内容の記録</div>
+      <div class="p-box">${esc(rec.visitors)}</div>
+    </div>`;
+
+    document.getElementById("printArea").innerHTML = page1 + page2;
+  }
+
+  render();
+})();
+</script>
